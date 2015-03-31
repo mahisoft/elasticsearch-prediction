@@ -36,13 +36,16 @@ import com.mahisoft.elasticsearchprediction.exception.FileLoadException;
 
 public class WekaFileUtil {
 
-	private static final Logger logger = LogManager.getLogger(WekaFileUtil.class);
+	private static final Logger LOGGER = LogManager.getLogger(WekaFileUtil.class);
 
 	private static final String LOAD_ERROR_MESSAGE = "Failed to load data from %s";
 
 	private static final String EXTENSION_ERROR_MESSAGE = "Failed to load data from %s, error in the type of extesion";
 
 	private static final String SAVE_ERROR_MESSAGE = "Failed to save data to file %s";
+
+	private WekaFileUtil() {
+	}
 
 	public static Instances loadDataFromCSV(File file) throws FileLoadException {
 		CSVLoader loader = new CSVLoader();
@@ -97,7 +100,7 @@ public class WekaFileUtil {
 			saver.setDestination(file);
 			saver.writeBatch();
 		} catch (IOException e) {
-			logger.error(format(SAVE_ERROR_MESSAGE, file), e);
+			LOGGER.error(format(SAVE_ERROR_MESSAGE, file), e);
 			throw e;
 		}
 

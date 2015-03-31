@@ -26,6 +26,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import weka.classifiers.AbstractClassifier;
+import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
@@ -43,7 +44,7 @@ import com.mahisoft.elasticsearchprediction.utils.weka.WekaFileUtil;
 
 public class WekaGenericClassifier implements GenericClassifier {
 
-	private static final Logger logger = LogManager.getLogger(WekaGenericClassifier.class);
+	private static final Logger LOGGER = LogManager.getLogger(WekaGenericClassifier.class);
 
 	private static final String TRUE = "true";
 
@@ -55,7 +56,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 
 	private static final String CROSS_VALIDATE_FAIL_MESSAGE = "Failed to validate model with num folds %s";
 
-	private static final String NULL_CLASSIFIER_MESSAGE = "Classifier %s is null";
+	private static final String NULL_CLASSIFIER_MESSAGE = "Classifier is null";
 
 	private static final String NULL_DATASET_MESSAGE = "Data Set is null";
 
@@ -91,7 +92,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 			try {
 				this.model.setOptions(options);
 			} catch (Exception e) {
-				logger.warn(format(OPTIONS_FAIL_MESSAGE, this.classifierClass, e.getMessage()));
+				LOGGER.warn(format(OPTIONS_FAIL_MESSAGE, this.classifierClass, e.getMessage()), e);
 			}
 		}
 
@@ -109,7 +110,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 			try {
 				optionsClassifier = Utils.splitOptions(options);
 			} catch (Exception e) {
-				logger.warn(format(OPTIONS_FAIL_MESSAGE, this.classifierClass, e.getMessage()));
+				LOGGER.warn(format(OPTIONS_FAIL_MESSAGE, this.classifierClass, e.getMessage()), e);
 			}
 		}
 
@@ -120,7 +121,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 		}
 
 		return true;
-	};
+	}
 
 	@Override
 	public Boolean loadData(File dataFile) throws FileLoadException {
@@ -128,11 +129,11 @@ public class WekaGenericClassifier implements GenericClassifier {
 
 		String saveArff = dataProperties.getValue("weka.data.saveArff");
 
-		if (saveArff != null && saveArff.toLowerCase().equals(TRUE)) {
+		if (saveArff != null && saveArff.equalsIgnoreCase(TRUE)) {
 			try {
 				WekaFileUtil.saveArffFile(new File(dataProperties.getValue("weka.data.fileArff")), data);
 			} catch (IOException e) {
-				logger.error(e);
+				LOGGER.error(e);
 			}
 		}
 
@@ -151,14 +152,13 @@ public class WekaGenericClassifier implements GenericClassifier {
 		}
 
 		this.dataSet = new DataSet();
+		this.data.setClassIndex(this.data.numAttributes() - 1);
+		this.data.randomize(new java.util.Random(1));
 
 		if (trainingPercentage == 100) {
 			this.dataSet.setTrainDataSet(data);
 			this.dataSet.setTestDataSet(null);
 		} else {
-			this.data.setClassIndex(this.data.numAttributes() - 1);
-			this.data.randomize(new java.util.Random(1));
-
 			int trainSize = (int) Math.round(this.data.numInstances() * (trainingPercentage / 100d));
 			int testSize = this.data.numInstances() - trainSize;
 
@@ -171,7 +171,11 @@ public class WekaGenericClassifier implements GenericClassifier {
 
 	@Override
 	public void trainModel() throws DataSetException, ModelException {
-		logger.info("Start the training");
+		LOGGER.info("Start the training");
+
+		if (data == null) {
+			throw new DataSetException(NULL_DATASET_MESSAGE);
+		}
 
 		if (this.dataSet == null) {
 			this.splitDataSet(100);
@@ -187,7 +191,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 			throw new ModelException(format(TRAIN_FAIL_MESSAGE, this.classifierClass), e);
 		}
 
-		logger.info("End of the training");
+		LOGGER.info("End of the training");
 	}
 
 	@Override
@@ -230,33 +234,55 @@ public class WekaGenericClassifier implements GenericClassifier {
 			throw new DataSetException(NULL_DATASET_MESSAGE);
 		}
 
+		if (this.model == null) {
+			throw new ModelException(NULL_CLASSIFIER_MESSAGE);
+		}
+
 		if (numFolds <= 0) {
 			throw new ModelException(format(CROSS_VALIDATE_FAIL_MESSAGE, numFolds));
 		}
 
-		Evaluation evaluation = this.crossValidateModel(this.data, numFolds);
-
-		CrossDataSetResult result = new CrossDataSetResult(numFolds);
-		result.setDataSetSize(this.data.size());
-
-		// TODO Falta iterar los resultados por particion
-
-		result.setResults(evaluation.toSummaryString(format(CROSSVALIDATE_MESSAGE, classifierClass, numFolds), false));
-
-		return result;
+		return this.crossValidateModel(this.data, numFolds);
 	}
 
-	public Evaluation crossValidateModel(Instances trainDataSet, int numFolds) throws ModelException {
-		Evaluation eval = null;
+	private CrossDataSetResult crossValidateModel(Instances data, int numFolds) throws ModelException {
+		CrossDataSetResult result = new CrossDataSetResult(numFolds);
+		result.setDataSetSize(data.size());
+
+		data.setClassIndex(data.numAttributes() - 1);
+
+		Instances randData = new Instances(data);
+		randData.randomize(new Random(1));
+		if (randData.classAttribute().isNominal())
+			randData.stratify(numFolds);
 
 		try {
-			eval = new Evaluation(trainDataSet);
-			eval.crossValidateModel(this.model, trainDataSet, numFolds, new Random(1));
+			Evaluation evaluation = new Evaluation(randData);
+			Evaluation eval = null;
+
+			for (int index = 0; index < numFolds; index++) {
+				eval = new Evaluation(randData);
+
+				Instances train = randData.trainCV(numFolds, index);
+				Instances test = randData.testCV(numFolds, index);
+
+				// build and evaluate classifier
+				Classifier clsCopy = AbstractClassifier.makeCopy(model);
+				clsCopy.buildClassifier(train);
+
+				evaluation.evaluateModel(clsCopy, test);
+				eval.evaluateModel(clsCopy, test);
+
+				result.addResult(index, eval.toSummaryString());
+			}
+
+			result.setResults(evaluation.toSummaryString(format(CROSSVALIDATE_MESSAGE, classifierClass, numFolds),
+					false));
 		} catch (Exception e) {
 			throw new ModelException(format(VALIDATE_FAIL_MESSAGE, this.classifierClass), e);
 		}
 
-		return eval;
+		return result;
 	}
 
 	@Override
@@ -285,6 +311,10 @@ public class WekaGenericClassifier implements GenericClassifier {
 
 	public Instances getData() {
 		return data;
+	}
+
+	public void setData(Instances data) {
+		this.data = data;
 	}
 
 	public DataSet getDataSet() {

@@ -34,7 +34,7 @@ public class PluginProperties {
 
     private static final String CONFIG_FILE = "/plugin.properties";
 
-    private static final ESLogger logger = Slf4jESLoggerFactory.getLogger(PluginProperties.class.getSimpleName());
+    private static final ESLogger LOGGER = Slf4jESLoggerFactory.getLogger(PluginProperties.class.getSimpleName());
 
     private static PluginProperties pluginProperties;
 
@@ -54,7 +54,7 @@ public class PluginProperties {
         if (pluginProperties == null) {
             Properties propertiesFile = new Properties();
 
-            logger.info("Loading properties");
+            LOGGER.info("Loading properties");
             propertiesFile.load(PluginProperties.class.getResourceAsStream(CONFIG_FILE));
 
             String modelPath = propertiesFile.getProperty("modelPath");
@@ -68,12 +68,12 @@ public class PluginProperties {
                 if (tokens.length != 2) {
                     throw new IOException("Problem reading configuration file");
                 } else {
-                    DataType type = tokens[1].equals("double") ? DOUBLE : STRING;
+                    DataType type = "double".equals(tokens[1]) ? DOUBLE : STRING;
                     mapping.add(new IndexAttributeDefinition(tokens[0], type));
                 }
             }
 
-            logger.info("Done loading properties");
+            LOGGER.info("Done loading properties");
             pluginProperties = new PluginProperties(modelPath, classifier, mapping);
         }
         return pluginProperties;

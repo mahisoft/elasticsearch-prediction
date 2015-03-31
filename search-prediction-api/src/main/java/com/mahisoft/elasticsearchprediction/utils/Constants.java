@@ -29,7 +29,9 @@ public class Constants {
 	public static final String NO_VALID_MESSAGE = "File no valid - %s";
 
 	public static final String INDEX_ENGINE_FAIL_MESSAGE = "Failed to create ElasticSearch Index - %s";
-	
+
 	public static final String FAIL_LOAD_GENERIC_CLASSIFIER = "Fail load GenericClassifier";
 
+	private Constants() {
+	}
 }

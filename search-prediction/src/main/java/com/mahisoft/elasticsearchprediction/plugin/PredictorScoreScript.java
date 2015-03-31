@@ -41,24 +41,27 @@ public class PredictorScoreScript extends AbstractSearchScript {
 
 	public static final String SCRIPT_NAME = "search-predictor";
 
-	private static final ESLogger logger = Slf4jESLoggerFactory.getLogger(PredictorScoreScript.class.getSimpleName());
+	private static final ESLogger LOGGER = Slf4jESLoggerFactory.getLogger(PredictorScoreScript.class.getSimpleName());
 
-	private static final PredictorEngine engine;
+	private static PredictorEngine engine;
 
-	private static final List<IndexAttributeDefinition> mapping;
+	private static List<IndexAttributeDefinition> mapping;
 
 	static {
 		try {
 			PluginProperties pluginProperties = PluginProperties.getInstance();
 
-			logger.info("Starting Predictor Engine");
+			LOGGER.info("Starting Predictor Engine");
 			engine = GenericPredictorFactory.getPredictor(pluginProperties);
 			mapping = pluginProperties.getMapping();
-			logger.info("Done starting Predictor Engine");
-		} catch (Throwable e) {
-			logger.error("Unable to create PredictorEngine", e);
+			LOGGER.info("Done starting Predictor Engine");
+		} catch (Exception e) {
+			LOGGER.error("Unable to create PredictorEngine", e);
 			throw new RuntimeException("Unable to create PredictorEngine");
 		}
+	}
+
+	public PredictorScoreScript() {
 	}
 
 	@Override
@@ -67,7 +70,6 @@ public class PredictorScoreScript extends AbstractSearchScript {
 	}
 
 	public static class Factory implements NativeScriptFactory {
-
 		@Override
 		public ExecutableScript newScript(@Nullable Map<String, Object> params) {
 			return new PredictorScoreScript();
@@ -75,29 +77,29 @@ public class PredictorScoreScript extends AbstractSearchScript {
 
 	}
 
-	public PredictorScoreScript() {}
-
 	@Override
 	public Object run() {
 		double estimation = 0.0;
-        List<IndexValue> values = new ArrayList<>(mapping.size());
+		List<IndexValue> values = new ArrayList<>(mapping.size());
 
-        try {
+		try {
 
 			for (IndexAttributeDefinition definition : mapping) {
 				ScriptDocValues docValues = (ScriptDocValues) doc().get(definition.getName());
-                boolean validDocValues = docValues != null && !docValues.isEmpty();
+				boolean validDocValues = docValues != null && !docValues.isEmpty();
 
-                if (definition.getType() == DOUBLE) {
-                    values.add(new IndexValue(definition, validDocValues ? ((ScriptDocValues.Doubles) docValues).getValue() : 0.0));
-                } else {
-                    values.add(new IndexValue(definition, validDocValues ? ((ScriptDocValues.Strings) docValues).getValue() : ""));
+				if (definition.getType() == DOUBLE) {
+					values.add(new IndexValue(definition, validDocValues ? ((ScriptDocValues.Doubles) docValues)
+							.getValue() : 0.0));
+				} else {
+					values.add(new IndexValue(definition, validDocValues ? ((ScriptDocValues.Strings) docValues)
+							.getValue() : ""));
 				}
 
 			}
-            estimation = engine.getPrediction(values);
-		} catch (Throwable ex) {
-			logger.error("Problem predicting", ex);
+			estimation = engine.getPrediction(values);
+		} catch (Exception ex) {
+			LOGGER.error("Problem predicting", ex);
 		}
 
 		return estimation;

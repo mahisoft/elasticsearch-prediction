@@ -48,17 +48,17 @@ import com.mahisoft.elasticsearchprediction.utils.DataProperties;
 
 public class ElasticsearchGenericIndexEngine {
 
-	private static final Logger logger = LogManager.getLogger(ElasticsearchGenericIndexEngine.class);
+	private static final Logger LOGGER = LogManager.getLogger(ElasticsearchGenericIndexEngine.class);
 
 	private static final String TYPE = "_default_";
 
 	private DataProperties dataProperties;
 
-    private BaseGuesser typeGuesser;
+	private BaseGuesser typeGuesser;
 
 	public ElasticsearchGenericIndexEngine(DataProperties dataProperties, BaseGuesser typeGuesser) {
 		this.dataProperties = dataProperties;
-        this.typeGuesser = typeGuesser;
+		this.typeGuesser = typeGuesser;
 	}
 
 	public void createIndex(File dataFile) throws IOException {
@@ -74,96 +74,103 @@ public class ElasticsearchGenericIndexEngine {
 			Settings settings = buildSettings(clusterName, nodeName);
 			TransportClient transportClient = new TransportClient(settings);
 
-            client = transportClient.addTransportAddress(new InetSocketTransportAddress(host, port));
-            deleteIndex(client, indexName);
-            loadData(dataFile, client, indexName, mappingFilename);
+			client = transportClient.addTransportAddress(new InetSocketTransportAddress(host, port));
+			deleteIndex(client, indexName);
+			loadData(dataFile, client, indexName, mappingFilename);
 		} finally {
-			if (client != null) client.close();
+			if (client != null)
+				client.close();
 		}
 	}
 
-    private void loadData(File dataFile, Client client, String indexName, String mappingFilename) throws IOException {
-        CSVParser parser = null;
-        PrintWriter mappingFileWriter = null;
-        List<String> headers = new ArrayList<String>();
+	private void loadData(File dataFile, Client client, String indexName, String mappingFilename) throws IOException {
+		CSVParser parser = null;
+		PrintWriter mappingFileWriter = null;
+		List<String> headers = new ArrayList<String>();
 
-        try {
-            mappingFileWriter = new PrintWriter(mappingFilename, Constants.UTF8);
-            parser = CSVParser.parse(dataFile, Charset.forName(Constants.UTF8), CSVFormat.RFC4180);
+		try {
+			mappingFileWriter = new PrintWriter(mappingFilename, Constants.UTF8);
+			parser = CSVParser.parse(dataFile, Charset.forName(Constants.UTF8), CSVFormat.RFC4180);
 
-            for (CSVRecord csvRecord : parser) {
-                if (csvRecord.getRecordNumber() == 1) {
-                    for (String header : csvRecord) {
-                        headers.add(header);
-                    }
-                    continue;
-                }
+			for (CSVRecord csvRecord : parser) {
+				if (csvRecord.getRecordNumber() == 1) {
+					addHeaders(csvRecord, headers);
+					continue;
+				}
 
-                if (csvRecord.getRecordNumber() == 2) {
-                    createIndex(client, indexName, mappingFileWriter, headers, csvRecord);
-                }
-                addValue(client, indexName, headers, csvRecord);
-            }
-        } finally {
-            if (mappingFileWriter != null)  mappingFileWriter.close();
-            if (parser != null) parser.close();
-        }
-        logger.info("Done!");
-    }
+				if (csvRecord.getRecordNumber() == 2) {
+					createIndex(client, indexName, mappingFileWriter, headers, csvRecord);
+				}
+				addValue(client, indexName, headers, csvRecord);
+			}
+		} finally {
+			if (mappingFileWriter != null)
+				mappingFileWriter.close();
+			if (parser != null)
+				parser.close();
+		}
+		
+		LOGGER.info("Done!");
+	}
 
-    private void addValue(Client client, String indexName, List<String> headers, CSVRecord csvRecord) throws IOException {
-        XContentBuilder jsonBuilder = jsonBuilder().startObject();
-        int i = 0;
+	private void addHeaders(CSVRecord csvRecord, List<String> headers) {
+		for (String header : csvRecord) {
+			headers.add(header);
+		}
+	}
 
-        for (String value: csvRecord) {
-            if (i == headers.size() - 1) {
-                continue;
-            }
-            jsonBuilder.field(headers.get(i), value);
-            i++;
-        }
-        jsonBuilder.endObject();
+	private void addValue(Client client, String indexName, List<String> headers, CSVRecord csvRecord)
+			throws IOException {
+		XContentBuilder jsonBuilder = jsonBuilder().startObject();
+		int i = 0;
 
-        IndexResponse response = client.prepareIndex(indexName, TYPE).setSource(jsonBuilder).execute()
-                .actionGet();
+		for (String value : csvRecord) {
+			if (i == headers.size() - 1) {
+				continue;
+			}
+			jsonBuilder.field(headers.get(i), value);
+			i++;
+		}
+		jsonBuilder.endObject();
 
-        if (!response.isCreated()) {
-            logger.warn(format("Problem adding document"));
-        }
-    }
+		IndexResponse response = client.prepareIndex(indexName, TYPE).setSource(jsonBuilder).execute().actionGet();
 
-    private void createIndex(Client client, String indexName, PrintWriter mappingFileWriter, List<String> headers, CSVRecord csvRecord) throws IOException {
-        XContentBuilder jsonBuilder = jsonBuilder().startObject().startObject("properties");
-        int i = 0;
+		if (!response.isCreated()) {
+			LOGGER.warn(format("Problem adding document"));
+		}
+	}
 
-        for (String value: csvRecord) {
-            if (i == headers.size() - 1) {
-                continue;
-            }
-            DataType dataType = typeGuesser.guess(value);
+	private void createIndex(Client client, String indexName, PrintWriter mappingFileWriter, List<String> headers,
+			CSVRecord csvRecord) throws IOException {
+		XContentBuilder jsonBuilder = jsonBuilder().startObject().startObject("properties");
+		int i = 0;
 
-            mappingFileWriter.write(headers.get(i) + ":" + dataType + (i == headers.size() - 2 ? "" : ","));
-            jsonBuilder.startObject(headers.get(i)).field("type", dataType).field("index", "not_analyzed").endObject();
-            i++;
-        }
+		for (String value : csvRecord) {
+			if (i == headers.size() - 1) {
+				continue;
+			}
+			DataType dataType = typeGuesser.guess(value);
 
-        jsonBuilder.endObject().endObject();
+			mappingFileWriter.write(headers.get(i) + ":" + dataType + (i == headers.size() - 2 ? "" : ","));
+			jsonBuilder.startObject(headers.get(i)).field("type", dataType).field("index", "not_analyzed").endObject();
+			i++;
+		}
 
-        CreateIndexResponse createIndexResponse = client.admin().indices().prepareCreate(indexName)
-                .addMapping(TYPE, jsonBuilder).execute().actionGet();
+		jsonBuilder.endObject().endObject();
 
-        if (!createIndexResponse.isAcknowledged()) {
-            String message = "Problem creating index";
+		CreateIndexResponse createIndexResponse = client.admin().indices().prepareCreate(indexName)
+				.addMapping(TYPE, jsonBuilder).execute().actionGet();
 
-            logger.info(message);
-            throw new ElasticsearchGenericIndexException(message);
-        }
-        logger.info("Index created");
-    }
+		if (!createIndexResponse.isAcknowledged()) {
+			String message = "Problem creating index";
 
+			LOGGER.info(message);
+			throw new ElasticsearchGenericIndexException(message);
+		}
+		LOGGER.info("Index created");
+	}
 
-
-    private void deleteIndex(Client client, String indexName) {
+	private void deleteIndex(Client client, String indexName) {
 		if (client.admin().indices().prepareExists(indexName).execute().actionGet().isExists()) {
 			client.admin().indices().prepareDelete(indexName).execute().actionGet();
 		}

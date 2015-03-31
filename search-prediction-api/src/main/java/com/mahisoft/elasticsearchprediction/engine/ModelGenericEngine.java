@@ -31,7 +31,7 @@ import com.mahisoft.elasticsearchprediction.utils.DataProperties;
 
 public class ModelGenericEngine {
 
-	private static final Logger logger = LogManager.getLogger(ModelGenericEngine.class);
+	private static final Logger LOGGER = LogManager.getLogger(ModelGenericEngine.class);
 
 	private GenericClassifier genericClassifier;
 
@@ -54,18 +54,18 @@ public class ModelGenericEngine {
 		if (options == null) {
 			SimpleDataSetResult result = this.genericClassifier.simpleValidation();
 
-			logger.info(result);
+			LOGGER.info(result);
 		} else {
 			if (options.contains("Sd")) {
 				SimpleDataSetResult result = this.genericClassifier.simpleValidation();
 
-				logger.info(result);
+				LOGGER.info(result);
 			}
 			if (options.contains("Cv")) {
 				CrossDataSetResult result = this.genericClassifier.crossValidation(Integer.parseInt(dataProperties
 						.getValue("validate.numFolds")));
 
-				logger.info(result);
+				LOGGER.info(result);
 			}
 		}
 	}

@@ -24,7 +24,8 @@ public class DataSet {
 
 	private Instances testDataSet;
 
-	public DataSet() {}
+	public DataSet() {
+	}
 
 	public DataSet(Instances trainDataSet, Instances testDataSet) {
 		this.trainDataSet = trainDataSet;

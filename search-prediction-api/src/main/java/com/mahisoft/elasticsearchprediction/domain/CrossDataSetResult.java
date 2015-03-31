@@ -17,6 +17,7 @@
 package com.mahisoft.elasticsearchprediction.domain;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class CrossDataSetResult {
 
@@ -26,7 +27,7 @@ public class CrossDataSetResult {
 
 	private String results;
 
-	private ArrayList<String> resultPartitions;
+	private List<String> resultPartitions;
 
 	public CrossDataSetResult(Integer numFolds) {
 		this.numFolds = numFolds;
@@ -61,11 +62,11 @@ public class CrossDataSetResult {
 		this.results = results;
 	}
 
-	public ArrayList<String> getResultPartitions() {
+	public List<String> getResultPartitions() {
 		return resultPartitions;
 	}
 
-	public void setResultPartitions(ArrayList<String> resultPartitions) {
+	public void setResultPartitions(List<String> resultPartitions) {
 		this.resultPartitions = resultPartitions;
 	}
 
@@ -74,7 +75,5 @@ public class CrossDataSetResult {
 		return "CrossDataSetResult: \ndataSetSize=" + dataSetSize + "\nnumFolds=" + numFolds + "\nresults=" + results
 				+ "\nresultPartitions=" + resultPartitions;
 	}
-	
-	
 
 }

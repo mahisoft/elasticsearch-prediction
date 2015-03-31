@@ -27,6 +27,9 @@ import java.util.List;
 
 public class DataSetUtil {
 
+	private DataSetUtil() {
+	}
+
 	public static File filterInstances(String[] filter, File dataFile) throws IOException {
 
 		String line, filterLine;
@@ -40,7 +43,7 @@ public class DataSetUtil {
 			bw = new BufferedWriter(new FileWriter(filteredFile));
 			br = new BufferedReader(new FileReader(dataFile));
 
-			line = br.readLine(); 
+			line = br.readLine();
 			Integer[] index = getFilterIndex(filter, line);
 
 			do {

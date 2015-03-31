@@ -42,7 +42,7 @@ import com.mahisoft.elasticsearchprediction.utils.FileUtil;
 
 public class ElasticsearchClassifierFacade {
 
-	private static final Logger logger = LogManager.getLogger(ElasticsearchClassifierFacade.class);
+    private static final Logger LOGGER = LogManager.getLogger(ElasticsearchClassifierFacade.class);
 
 	public Boolean start(String configFile) throws FileLoadException, ModelException, IOException, DataSetException {
 		DataProperties dataProperties = new DataProperties(configFile);
@@ -72,9 +72,10 @@ public class ElasticsearchClassifierFacade {
 		GenericClassifier genericClassifier = GenericClassifierFactory.getClassifier(dataProperties);
 
 		if (genericClassifier == null) {
-			throw new ModelException(format(FAIL_LOAD_GENERIC_CLASSIFIER, dataFileName));
+			throw new ModelException(FAIL_LOAD_GENERIC_CLASSIFIER);
 		}
 
+		System.out.println("DataFile " + dataFile.getAbsolutePath());
 		ModelGenericEngine clientModelEngine = new ModelGenericEngine();
 
 		clientModelEngine.setDataProperties(dataProperties);
@@ -87,7 +88,7 @@ public class ElasticsearchClassifierFacade {
 
 	public static void main(String[] args) {
 		if (args.length != 1) {
-			logger.info("Usage:\n" + "java -jar jarfile.jar /path/to/configuration/file\n");
+			LOGGER.info("Usage:\n" + "java -jar jarfile.jar /path/to/configuration/file\n");
 			return;
 		}
 
@@ -96,7 +97,7 @@ public class ElasticsearchClassifierFacade {
 		try {
 			elasticSearchClassifier.start(args[0]);
 		} catch (FileLoadException | ModelException | IOException | DataSetException e) {
-			logger.error(e.getMessage(), e);
+			LOGGER.error(e.getMessage(), e);
 		}
 	}
 

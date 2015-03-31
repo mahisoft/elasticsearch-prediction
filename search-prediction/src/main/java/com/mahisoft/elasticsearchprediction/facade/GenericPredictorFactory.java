@@ -23,6 +23,9 @@ import com.mahisoft.elasticsearchprediction.plugin.utils.PluginProperties;
 
 public class GenericPredictorFactory {
 
+	private GenericPredictorFactory() {
+	}
+
 	public static PredictorEngine getPredictor(PluginProperties pluginProperties) throws FileModelException {
 		String genericClassifierClass = pluginProperties.getClassifier();
 
@@ -31,6 +34,8 @@ public class GenericPredictorFactory {
 			switch (genericClassifierClass) {
 			case "weka":
 				return new WekaPredictorEngine(pluginProperties.getModelPath());
+			case "another_lib":
+				return null;
 			default:
 				return null;
 			}

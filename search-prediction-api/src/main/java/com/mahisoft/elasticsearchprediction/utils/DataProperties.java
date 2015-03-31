@@ -26,31 +26,32 @@ import org.apache.log4j.Logger;
 
 public class DataProperties {
 
-	private static final Logger logger = LogManager.getLogger(DataProperties.class);
+	private static final Logger LOGGER = LogManager.getLogger(DataProperties.class);
 
 	private Properties properties;
 
 	public DataProperties(String configFile) throws IOException {
-        FileInputStream fileInputStream = null;
+		FileInputStream fileInputStream = null;
 
-        this.properties = new Properties();
-        try {
-            fileInputStream = new FileInputStream(new File(configFile));
-            properties.clear();
-            properties.load(fileInputStream);
-            fileInputStream.close();
-        } catch (Exception e) {
-            logger.error("Problem loading properties file " + configFile, e);
-        } finally {
-            if (fileInputStream != null) fileInputStream.close();
-        }
+		this.properties = new Properties();
+		try {
+			fileInputStream = new FileInputStream(new File(configFile));
+			properties.clear();
+			properties.load(fileInputStream);
+			fileInputStream.close();
+		} catch (Exception e) {
+			LOGGER.error("Problem loading properties file " + configFile, e);
+		} finally {
+			if (fileInputStream != null)
+				fileInputStream.close();
+		}
 	}
 
 	public String getValue(String key) {
 		String value = properties.getProperty(key);
 
 		if (value == null) {
-			logger.warn("The key " + key + " is not in the configuration file");
+			LOGGER.warn("The key " + key + " is not in the configuration file");
 		}
 		return value;
 	}

@@ -16,8 +16,11 @@
 
 package com.mahisoft.elasticsearchprediction.plugin.engine.weka;
 
+import static com.mahisoft.elasticsearchprediction.domain.DataType.DOUBLE;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.slf4j.Slf4jESLoggerFactory;
@@ -33,16 +36,14 @@ import com.mahisoft.elasticsearchprediction.plugin.engine.PredictorEngine;
 import com.mahisoft.elasticsearchprediction.plugin.exception.FileModelException;
 import com.mahisoft.elasticsearchprediction.plugin.exception.PredictionException;
 
-import static com.mahisoft.elasticsearchprediction.domain.DataType.DOUBLE;
-
 public class WekaPredictorEngine implements PredictorEngine {
 
-	private static final ESLogger logger = Slf4jESLoggerFactory.getLogger(PredictorEngine.class.getSimpleName());
+	private static final ESLogger LOGGER = Slf4jESLoggerFactory.getLogger(PredictorEngine.class.getSimpleName());
 
 	private static AbstractClassifier predictor = null;
 
 	public WekaPredictorEngine(String modelPath) throws FileModelException {
-		logger.info(this.getClass() + " class is initialized");
+		LOGGER.info(this.getClass() + " class is initialized");
 		loadModel(modelPath);
 	}
 
@@ -72,13 +73,13 @@ public class WekaPredictorEngine implements PredictorEngine {
 	}
 
 	public Instances createDataSet(Collection<IndexValue> values) {
-		ArrayList<Attribute> attributes = new ArrayList<Attribute>(values.size());
+		List<Attribute> attributes = new ArrayList<Attribute>(values.size());
 
 		for (IndexValue value : values) {
 			if (value.getDefinition().getType() == DOUBLE) {
 				attributes.add(new Attribute(value.getDefinition().getName()));
 			} else {
-				ArrayList<String> nominal = new ArrayList<String>(1);
+				List<String> nominal = new ArrayList<String>(1);
 				nominal.add(value.getValue().toString());
 
 				attributes.add(new Attribute(value.getDefinition().getName(), nominal));
@@ -87,25 +88,25 @@ public class WekaPredictorEngine implements PredictorEngine {
 
 		attributes.add(new Attribute("target"));
 
-		return new Instances("dataset", attributes, 0);
+		return new Instances("dataset", (ArrayList<Attribute>) attributes, 0);
 	}
 
 	public double predict(AbstractClassifier predictor, Instance instance) throws PredictionException {
 		try {
 			return predictor.classifyInstance(instance);
 		} catch (Exception e) {
-			logger.error(instance.toString(), e);
+			LOGGER.error(instance.toString(), e);
 			throw new PredictionException(e);
 		}
 	}
 
 	public void loadModel(String modelPath) throws FileModelException {
 		try {
-			logger.info("Loading model " + modelPath);
+			LOGGER.info("Loading model " + modelPath);
 			predictor = (AbstractClassifier) weka.core.SerializationHelper.read(modelPath);
 		} catch (Exception e) {
 			String message = "Problem loading model";
-			logger.error(message, e);
+			LOGGER.error(message, e);
 			throw new FileModelException(message);
 		}
 	}

@@ -22,6 +22,9 @@ import java.io.File;
 
 public class FileUtil {
 
+	private FileUtil() {
+	}
+
 	public static Boolean isValid(File dataFile) {
 
 		if (dataFile == null || !getFileExtension(dataFile.getName()).equals(CSV_EXTENSION)) {

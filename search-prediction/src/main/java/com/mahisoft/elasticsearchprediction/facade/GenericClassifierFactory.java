@@ -22,6 +22,9 @@ import com.mahisoft.elasticsearchprediction.utils.DataProperties;
 
 public class GenericClassifierFactory {
 
+	private GenericClassifierFactory() {
+	}
+
 	public static GenericClassifier getClassifier(DataProperties dataProperties) {
 		String genericClassifierClass = dataProperties.getValue("classifier.lib");
 
@@ -30,6 +33,8 @@ public class GenericClassifierFactory {
 			switch (genericClassifierClass) {
 			case "weka":
 				return new WekaGenericClassifier();
+			case "another_lib":
+				return null;
 			default:
 				return null;
 			}
