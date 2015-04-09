@@ -17,6 +17,7 @@
 package com.mahisoft.elasticsearchprediction.plugin.engine.weka;
 
 import static com.mahisoft.elasticsearchprediction.domain.DataType.DOUBLE;
+import static java.lang.String.format;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +54,11 @@ public class WekaPredictorEngine implements PredictorEngine {
 		return predict(predictor, instance);
 	}
 
-	public Instance createInstance(Collection<IndexValue> values) {
+	private Instance createInstance(Collection<IndexValue> values) throws PredictionException {
+		if (values == null) {
+			throw new PredictionException("Intance values are null");
+		}
+
 		Instance instance = new DenseInstance(values.size() + 1);
 		Instances dataSet = createDataSet(values);
 		dataSet.setClassIndex(dataSet.numAttributes() - 1);
@@ -72,7 +77,7 @@ public class WekaPredictorEngine implements PredictorEngine {
 		return instance;
 	}
 
-	public Instances createDataSet(Collection<IndexValue> values) {
+	private Instances createDataSet(Collection<IndexValue> values) {
 		List<Attribute> attributes = new ArrayList<Attribute>(values.size());
 
 		for (IndexValue value : values) {
@@ -91,23 +96,22 @@ public class WekaPredictorEngine implements PredictorEngine {
 		return new Instances("dataset", (ArrayList<Attribute>) attributes, 0);
 	}
 
-	public double predict(AbstractClassifier predictor, Instance instance) throws PredictionException {
+	private double predict(AbstractClassifier predictor, Instance instance) throws PredictionException {
 		try {
 			return predictor.classifyInstance(instance);
 		} catch (Exception e) {
-			LOGGER.error(instance.toString(), e);
+			LOGGER.error(format("Problem predict: %s", instance.toString()));
 			throw new PredictionException(e);
 		}
 	}
 
-	public void loadModel(String modelPath) throws FileModelException {
+	private void loadModel(String modelPath) throws FileModelException {
 		try {
 			LOGGER.info("Loading model " + modelPath);
 			predictor = (AbstractClassifier) weka.core.SerializationHelper.read(modelPath);
 		} catch (Exception e) {
-			String message = "Problem loading model";
-			LOGGER.error(message, e);
-			throw new FileModelException(message);
+			LOGGER.error(format("Problem loading model: %s", modelPath), e);
+			throw new FileModelException(e);
 		}
 	}
 

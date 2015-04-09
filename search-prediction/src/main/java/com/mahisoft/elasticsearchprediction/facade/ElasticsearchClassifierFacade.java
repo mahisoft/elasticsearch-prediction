@@ -75,7 +75,6 @@ public class ElasticsearchClassifierFacade {
 			throw new ModelException(FAIL_LOAD_GENERIC_CLASSIFIER);
 		}
 
-		System.out.println("DataFile " + dataFile.getAbsolutePath());
 		ModelGenericEngine clientModelEngine = new ModelGenericEngine();
 
 		clientModelEngine.setDataProperties(dataProperties);

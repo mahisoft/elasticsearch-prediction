@@ -19,7 +19,6 @@ package com.mahisoft.elasticsearchprediction.classifier.weka;
 import static java.lang.String.format;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Random;
 
 import org.apache.log4j.LogManager;
@@ -132,7 +131,7 @@ public class WekaGenericClassifier implements GenericClassifier {
 		if (saveArff != null && saveArff.equalsIgnoreCase(TRUE)) {
 			try {
 				WekaFileUtil.saveArffFile(new File(dataProperties.getValue("weka.data.fileArff")), data);
-			} catch (IOException e) {
+			} catch (FileLoadException e) {
 				LOGGER.error(e);
 			}
 		}

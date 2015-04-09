@@ -25,9 +25,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import weka.core.Instances;
 import weka.core.converters.ArffSaver;
 import weka.core.converters.CSVLoader;
@@ -35,8 +32,6 @@ import weka.core.converters.CSVLoader;
 import com.mahisoft.elasticsearchprediction.exception.FileLoadException;
 
 public class WekaFileUtil {
-
-	private static final Logger LOGGER = LogManager.getLogger(WekaFileUtil.class);
 
 	private static final String LOAD_ERROR_MESSAGE = "Failed to load data from %s";
 
@@ -67,7 +62,7 @@ public class WekaFileUtil {
 			reader = new BufferedReader(new FileReader(file));
 			data = new Instances(reader);
 			reader.close();
-		} catch (IOException e) {
+		} catch (NullPointerException | IOException e) {
 			throw new FileLoadException(format(LOAD_ERROR_MESSAGE, file), e);
 		}
 
@@ -81,6 +76,10 @@ public class WekaFileUtil {
 
 		String extension = getFileExtension(file.getName());
 
+		if (extension == null) {
+			throw new FileLoadException(format(LOAD_ERROR_MESSAGE, file));
+		}
+
 		switch (extension) {
 		case ARFF_EXTENSION:
 			return loadDataFromArff(file);
@@ -91,7 +90,7 @@ public class WekaFileUtil {
 		}
 	}
 
-	public static Boolean saveArffFile(File file, Instances data) throws IOException {
+	public static Boolean saveArffFile(File file, Instances data) throws FileLoadException {
 		ArffSaver saver = new ArffSaver();
 
 		try {
@@ -99,9 +98,8 @@ public class WekaFileUtil {
 			saver.setFile(file);
 			saver.setDestination(file);
 			saver.writeBatch();
-		} catch (IOException e) {
-			LOGGER.error(format(SAVE_ERROR_MESSAGE, file), e);
-			throw e;
+		} catch (NullPointerException | IOException e) {
+			throw new FileLoadException(format(SAVE_ERROR_MESSAGE, file), e);
 		}
 
 		return true;

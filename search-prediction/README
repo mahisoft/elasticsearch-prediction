@@ -84,15 +84,15 @@ Example:
   #Compile Weka Implementation
 
   cd ../search-prediction-weka-impl
-  cp ../search-prediction-api/target/releases/search-prediction-api-1.0.jar lib
+  cp ../search-prediction-api/target/search-prediction-api-1.0.jar lib
   mvn clean
   mvn package
 
   #Compile Generator
 
   cd ../search-prediction
-  cp ../search-prediction-api/target/releases/search-prediction-api-1.0.jar lib
-  cp ../search-prediction-weka-impl/target/releases/search-prediction-weka-impl-1.0.jar lib
+  cp ../search-prediction-api/target/search-prediction-api-1.0.jar lib
+  cp ../search-prediction-weka-impl/target/search-prediction-weka-impl-1.0.jar lib
   mvn install:install-file -Dfile=lib/search-prediction-weka-impl-1.0.jar -DgroupId=com.mahisoft.elasticsearchprediction -DartifactId=search-prediction-weka-impl -Dversion=1.0 -Dpackaging=jar
   mvn install:install-file -Dfile=lib/search-prediction-api-1.0.jar -DgroupId=com.mahisoft.elasticsearchprediction -DartifactId=search-prediction-api -Dversion=1.0 -Dpackaging=jar
   mvn clean
